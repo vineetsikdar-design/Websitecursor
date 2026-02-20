@@ -10,6 +10,9 @@ Options -Indexes
   # Block direct access to digital files folder (serve via download.php)
   RewriteRule ^files/ - [F,L]
 
+  # Block direct access to archived proof backups
+  RewriteRule ^uploads/archives/ - [F,L]
+
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^ index.php [L]

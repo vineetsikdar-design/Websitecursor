@@ -58,11 +58,16 @@ function sql_split_statements(string $sql): array
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
     $adminEmail = strtolower(trim((string)($_POST['admin_email'] ?? '')));
+    $adminUser = strtolower(trim((string)($_POST['admin_username'] ?? '')));
     $adminPass = (string)($_POST['admin_password'] ?? '');
     $adminPass2 = (string)($_POST['admin_password2'] ?? '');
 
     if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
         flash_set('error', 'Enter a valid admin email.');
+        redirect('install.php');
+    }
+    if ($adminUser === '' || !preg_match('/^[a-z0-9_]{3,20}$/', $adminUser)) {
+        flash_set('error', 'Admin username must be 3–20 chars (a-z, 0-9, underscore).');
         redirect('install.php');
     }
     if (strlen($adminPass) < 6) {
@@ -75,39 +80,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        // Create tables if missing
-        $needSchema = false;
-        try {
-            db()->query("SELECT 1 FROM users LIMIT 1");
-        } catch (Throwable) {
-            $needSchema = true;
+        // Run schema (idempotent)
+        $sqlPath = __DIR__ . '/database.sql';
+        $sql = @file_get_contents($sqlPath);
+        if ($sql === false) {
+            throw new RuntimeException('Could not read database.sql');
         }
-        if ($needSchema) {
-            $sqlPath = __DIR__ . '/database.sql';
-            $sql = @file_get_contents($sqlPath);
-            if ($sql === false) {
-                throw new RuntimeException('Could not read database.sql');
-            }
-            $stmts = sql_split_statements($sql);
-            foreach ($stmts as $stmt) {
-                db()->exec($stmt);
-            }
+        $stmts = sql_split_statements($sql);
+        foreach ($stmts as $stmt) {
+            db()->exec($stmt);
         }
-
-        // Ensure installed key exists
-        db()->exec("INSERT IGNORE INTO settings (`key`,`value`) VALUES ('installed','0')");
 
         // Create admin user if none exists
         $st = db()->query("SELECT id FROM users WHERE is_admin=1 LIMIT 1");
         $existingAdmin = $st->fetch();
         if (!$existingAdmin) {
             $refCode = strtoupper(bin2hex(random_bytes(4)));
-            $ins = db()->prepare("INSERT INTO users (email,password_hash,wallet_balance,referral_code,referred_by,is_admin) VALUES (?,?,?,?,NULL,1)");
-            $ins->execute([$adminEmail, password_hash($adminPass, PASSWORD_BCRYPT), '0.00', $refCode]);
+            $ins = db()->prepare("INSERT INTO users (email,username,display_name,password_hash,wallet_balance,referral_code,referred_by,referral_eligible_until,is_admin,is_banned)
+                                  VALUES (?,?,?,?,?, ?, NULL, NULL, 1, 0)");
+            $ins->execute([
+                $adminEmail,
+                $adminUser,
+                'Admin',
+                password_hash($adminPass, PASSWORD_BCRYPT),
+                '0.00',
+                $refCode
+            ]);
         }
 
-        $up = db()->prepare("UPDATE settings SET `value`='1' WHERE `key`='installed'");
-        $up->execute();
+        setting_set('installed', '1');
 
         flash_set('success', 'Installed! You can now login as admin.');
         redirect('login.php');
@@ -131,6 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <label class="label">Admin email</label>
       <input class="input" type="email" name="admin_email" required placeholder="admin@example.com">
+
+      <label class="label">Admin username</label>
+      <input class="input mono" type="text" name="admin_username" required minlength="3" maxlength="20" placeholder="admin">
+      <div class="muted small">Allowed: a-z, 0-9, underscore</div>
 
       <label class="label">Admin password</label>
       <input class="input" type="password" name="admin_password" required placeholder="Minimum 6 characters">

@@ -3,15 +3,15 @@ require_once __DIR__ . '/config.php';
 
 $u = require_login();
 $oid = (int)($_GET['order_id'] ?? 0);
+$reqFile = trim((string)($_GET['file'] ?? ''));
 if ($oid <= 0) {
     http_response_code(400);
     echo "Missing order_id";
     exit;
 }
 
-$st = db()->prepare("SELECT o.id,o.user_id,o.status,p.download_file,p.name AS product_name
+$st = db()->prepare("SELECT o.id,o.user_id,o.status,o.delivery_json
                      FROM orders o
-                     JOIN products p ON p.id=o.product_id
                      WHERE o.id=? AND o.user_id=? LIMIT 1");
 $st->execute([$oid, $u['id']]);
 $row = $st->fetch();
@@ -25,14 +25,25 @@ if ((string)$row['status'] !== 'completed') {
     echo "Order not completed.";
     exit;
 }
-$file = (string)($row['download_file'] ?? '');
-if ($file === '') {
-    http_response_code(404);
-    echo "No download file configured.";
-    exit;
+
+$allowed = [];
+$dj = (string)($row['delivery_json'] ?? '');
+if ($dj !== '') {
+    $data = json_decode($dj, true);
+    if (is_array($data) && isset($data['files']) && is_array($data['files'])) {
+        foreach ($data['files'] as $f) {
+            $f = basename((string)$f);
+            if ($f !== '') $allowed[$f] = true;
+        }
+    }
 }
 
-$file = basename($file);
+$file = basename($reqFile);
+if ($file === '' || empty($allowed[$file])) {
+    http_response_code(404);
+    echo "File not available for this order.";
+    exit;
+}
 if (!preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,250}$/', $file)) {
     http_response_code(400);
     echo "Invalid file name.";
