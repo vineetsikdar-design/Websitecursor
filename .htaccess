@@ -1,0 +1,32 @@
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header set X-Frame-Options "DENY"
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "same-origin"
+</IfModule>
+
+# Block sensitive files
+<FilesMatch "^(config\.php|database\.sql)$">
+  Require all denied
+</FilesMatch>
+
+# Block direct access to stored files (served only via download.php)
+RewriteEngine On
+RewriteRule ^(files|uploads)/ - [F,L]
+
+# Pretty URLs (optional)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^$ index.php [L]
+RewriteRule ^login/?$ login.php [L]
+RewriteRule ^register/?$ register.php [L]
+RewriteRule ^admin/?$ admin.php [L]
+RewriteRule ^checkout/?$ checkout.php [L]
+RewriteRule ^download/?$ download.php [L]
+RewriteRule ^install/?$ install.php [L]
+RewriteRule ^cron/?$ cron.php [L]
+RewriteRule ^logout/?$ index.php?logout=1 [L,QSA]
+
