@@ -129,7 +129,7 @@ if (is_post()) {
 
     $walletUse = (string)($_POST['wallet_use'] ?? '0');
     $walletUse = str_replace(',', '.', $walletUse);
-    $walletUseF = (float)$walletUse;
+    $walletUseF = round((float)$walletUse, 2);
     if ($walletUseF < 0) $walletUseF = 0.0;
 
     $price = (float)$order['price'];

@@ -8,7 +8,13 @@ Options -Indexes
 
 # Block sensitive files
 <FilesMatch "^(config\.php|database\.sql)$">
-  Require all denied
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
 </FilesMatch>
 
 # Block direct access to stored files (served only via download.php)

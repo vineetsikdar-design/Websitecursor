@@ -43,7 +43,7 @@ try {
     echo '<p class="muted">Database tables are missing or DB credentials are incorrect.</p>';
     echo '<div class="row">';
     echo '<a class="btn primary" href="install.php">Open installer</a>';
-    echo '<a class="btn ghost" href="database.sql" onclick="return false;">Import database.sql in phpMyAdmin</a>';
+    echo '<span class="muted small">Import <b>database.sql</b> in phpMyAdmin or run the installer.</span>';
     echo '</div>';
     echo '</div>';
     render_footer();
