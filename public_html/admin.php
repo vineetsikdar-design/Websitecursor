@@ -182,6 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'smtp_pass' => (string)($_POST['smtp_pass'] ?? ''),
                 'smtp_from_email' => trim((string)($_POST['smtp_from_email'] ?? '')),
                 'smtp_from_name' => trim((string)($_POST['smtp_from_name'] ?? SITE_NAME)),
+                'notify_email' => trim((string)($_POST['notify_email'] ?? '')),
             ];
             $wm = strtolower(trim($pairs['wallet_mode']));
             if ($wm !== 'partial' && $wm !== 'wallet_only') $pairs['wallet_mode'] = 'partial';
@@ -584,6 +585,7 @@ if ($tab === 'settings') {
     echo '<div><label class="label">From email</label><input class="input mono" name="smtp_from_email" value="' . e(setting_get('smtp_from_email', '')) . '"></div>';
     echo '<div><label class="label">From name</label><input class="input" name="smtp_from_name" value="' . e(setting_get('smtp_from_name', SITE_NAME)) . '"></div>';
     echo '</div>';
+    echo '<label class="label">Notification email (orders/topups)</label><input class="input mono" name="notify_email" value="' . e(setting_get('notify_email', '')) . '" placeholder="admin@example.com">';
 
     echo '<button class="btn btn-full" type="submit">Save settings</button>';
     echo '</form></div>';

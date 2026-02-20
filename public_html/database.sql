@@ -256,4 +256,5 @@ INSERT IGNORE INTO settings (`key`, `value`) VALUES
 ('smtp_user', ''),
 ('smtp_pass', ''),
 ('smtp_from_email', ''),
-('smtp_from_name', 'ZENTRAXX STORE');
+('smtp_from_name', 'ZENTRAXX STORE'),
+('notify_email', '');

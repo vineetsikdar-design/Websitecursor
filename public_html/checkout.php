@@ -296,6 +296,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach ($items as $it) $itemCount += (int)$it['qty'];
                 $msg = "🟢 New Wallet Order\nOrder #{$oid}\nUser: {$u['username']} ({$u['email']})\nItems: {$itemCount}\nTotal: ₹" . money_fmt($total) . "\nDiscount: ₹" . money_fmt($discount) . "\nWallet used: ₹" . money_fmt($walletUse);
                 telegram_send($msg);
+                $to = trim(setting_get('notify_email', ''));
+                if ($to !== '' && filter_var($to, FILTER_VALIDATE_EMAIL)) {
+                    $body = '<h3>New Wallet Order</h3>'
+                        . '<p>Order #' . (int)$oid . '</p>'
+                        . '<p>User: ' . e((string)$u['username']) . ' (' . e((string)$u['email']) . ')</p>'
+                        . '<p>Total: ₹' . e(money_fmt($total)) . ' · Discount: ₹' . e(money_fmt($discount)) . ' · Wallet: ₹' . e(money_fmt($walletUse)) . '</p>';
+                    smtp_send_mail($to, SITE_NAME . ' - New Wallet Order #' . (int)$oid, $body);
+                }
                 flash_set('success', 'Order created successfully! Wait for owner to deliver your order.');
                 redirect('checkout.php?order_id=' . $oid . '&success=1');
             }
@@ -387,6 +395,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $msg = "🟣 New Order Proof\nOrder #{$oid}\nUser: {$u['username']} ({$u['email']})\nMethod: {$method}\nAmount: ₹" . money_fmt($o['pay_amount']) . "\nRef: {$ref}\nWhatsApp: {$whatsapp}\nTelegram: " . ($telegram ?: '-') . "\nScreenshot: " . site_url($uploadedRel);
             telegram_send($msg);
+            $to = trim(setting_get('notify_email', ''));
+            if ($to !== '' && filter_var($to, FILTER_VALIDATE_EMAIL)) {
+                $body = '<h3>New Order Payment Proof</h3>'
+                    . '<p>Order #' . (int)$oid . '</p>'
+                    . '<p>User: ' . e((string)$u['username']) . ' (' . e((string)$u['email']) . ')</p>'
+                    . '<p>Method: ' . e((string)$method) . ' · Amount: ₹' . e(money_fmt($o['pay_amount'])) . '</p>'
+                    . '<p>Ref: <b>' . e($ref) . '</b></p>'
+                    . '<p>WhatsApp: ' . e($whatsapp) . ' · Telegram: ' . e($telegram ?: '-') . '</p>';
+                smtp_send_mail($to, SITE_NAME . ' - Order Proof #' . (int)$oid, $body);
+            }
 
             flash_set('success', 'Proof submitted! Wait for admin verification.');
             redirect('checkout.php?order_id=' . $oid . '&success=1');
@@ -470,6 +488,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $msg = "🔵 Wallet Top-up Request\nTopup #{$tid}\nUser: {$u['username']} ({$u['email']})\nAmount: ₹" . money_fmt($amount) . "\nMethod: {$method}\nRef: {$ref}\nWhatsApp: {$whatsapp}\nTelegram: " . ($telegram ?: '-') . "\nScreenshot: " . site_url($uploadedRel);
             telegram_send($msg);
+            $to = trim(setting_get('notify_email', ''));
+            if ($to !== '' && filter_var($to, FILTER_VALIDATE_EMAIL)) {
+                $body = '<h3>New Wallet Top-up Request</h3>'
+                    . '<p>Topup #' . (int)$tid . '</p>'
+                    . '<p>User: ' . e((string)$u['username']) . ' (' . e((string)$u['email']) . ')</p>'
+                    . '<p>Amount: ₹' . e(money_fmt($amount)) . ' · Method: ' . e((string)$method) . '</p>'
+                    . '<p>Ref: <b>' . e($ref) . '</b></p>'
+                    . '<p>WhatsApp: ' . e($whatsapp) . ' · Telegram: ' . e($telegram ?: '-') . '</p>';
+                smtp_send_mail($to, SITE_NAME . ' - Wallet Topup #' . (int)$tid, $body);
+            }
 
             flash_set('success', 'Top-up submitted! Admin will approve soon.');
             redirect('checkout.php?action=wallet');
